@@ -26,8 +26,6 @@ jobs:
           sudo make install
           sudo /sbin/ldconfig -v
       - run: |
-          sudo cp /home/linuxbrew/.linuxbrew/Cellar/libgit2/1.1.0/lib/lib* /usr/lib
-          export PATH="/home/linuxbrew/.linuxbrew/Cellar/libgit2/1.1.0/lib/:$PATH"
           go build
   
   build-macos:
