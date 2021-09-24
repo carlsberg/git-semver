@@ -4,6 +4,10 @@
 
 _work in progress_
 
+## System Requirements
+
+- `libgit2 >= 1.1`
+
 ## Commands
 
 #### `git semver bump`
