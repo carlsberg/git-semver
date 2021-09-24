@@ -1,0 +1,41 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ '1.17', '1.16', '1.15' ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go build
+  
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        go: [ '1.17', '1.16', '1.15' ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go build
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        go: [ '1.17', '1.16', '1.15' ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go build
