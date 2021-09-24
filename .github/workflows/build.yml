@@ -44,38 +44,38 @@ jobs:
           brew install libgit2
       - run: go build
 
-  build-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        go: [ '1.17', '1.16', '1.15' ]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
-        with:
-          go-version: ${{ matrix.go }}
-      - name: Add choco packages
-        run: |
-          choco install wget
-      - name: Build libgit2 and gitconvex
-        run: |
-          unzip -q ./lib/win/dep_libs.zip
-          wget -q https://github.com/libgit2/libgit2/releases/download/v1.1.0/libgit2-1.1.0.zip
-          unzip -q libgit2-1.1.0.zip
-          cd libgit2-1.1.0
-          cp -rp ../lib/ .
-          git clone https://github.com/libssh2/libssh2 libssh2
-          mkdir build && mkdir install && cd build
-          cmake -DPKG_CONFIG_EXECUTABLE=C:\\msys64\\usr\\bin\\pkg-config.exe -DCMAKE_INSTALL_PREFIX=../install -DOPENSSL_ROOT_DIR=../lib/win/ -DBUILD_CLAR=OFF -DEMBED_SSH_PATH=../libssh2 ..
-          cmake --build . --target install
-          cd ../install
-          cp ./bin/git2.dll /c/msys64/usr/bin
-          cp ./lib/git2.lib /c/msys64/usr/lib
-          cp ./lib/pkgconfig/libgit2.pc /c/msys64/usr/lib/pkgconfig
-          cp -r ./include/* /c/msys64/usr/include
-          cd ../..
-          rm C:\\Strawberry\\perl\\bin\\pkg-config.bat
-          export PATH="/c/msys64/:/c/msys64/usr/:/c/msys64/usr/bin:$PATH" 
-          go get -v ./...
-          ./make.bat build
-      - run: go build
+  # build-windows:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       go: [ '1.17', '1.16', '1.15' ]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-go@v2
+  #       with:
+  #         go-version: ${{ matrix.go }}
+  #     - name: Add choco packages
+  #       run: |
+  #         choco install wget
+  #     - name: Build libgit2 and gitconvex
+  #       run: |
+  #         unzip -q ./lib/win/dep_libs.zip
+  #         wget -q https://github.com/libgit2/libgit2/releases/download/v1.1.0/libgit2-1.1.0.zip
+  #         unzip -q libgit2-1.1.0.zip
+  #         cd libgit2-1.1.0
+  #         cp -rp ../lib/ .
+  #         git clone https://github.com/libssh2/libssh2 libssh2
+  #         mkdir build && mkdir install && cd build
+  #         cmake -DPKG_CONFIG_EXECUTABLE=C:\\msys64\\usr\\bin\\pkg-config.exe -DCMAKE_INSTALL_PREFIX=../install -DOPENSSL_ROOT_DIR=../lib/win/ -DBUILD_CLAR=OFF -DEMBED_SSH_PATH=../libssh2 ..
+  #         cmake --build . --target install
+  #         cd ../install
+  #         cp ./bin/git2.dll /c/msys64/usr/bin
+  #         cp ./lib/git2.lib /c/msys64/usr/lib
+  #         cp ./lib/pkgconfig/libgit2.pc /c/msys64/usr/lib/pkgconfig
+  #         cp -r ./include/* /c/msys64/usr/include
+  #         cd ../..
+  #         rm C:\\Strawberry\\perl\\bin\\pkg-config.bat
+  #         export PATH="/c/msys64/:/c/msys64/usr/:/c/msys64/usr/bin:$PATH" 
+  #         go get -v ./...
+  #         ./make.bat build
+  #     - run: go build
