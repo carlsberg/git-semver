@@ -2,6 +2,8 @@ package git_semver
 
 import (
 	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"log"
 	"regexp"
 	"sort"
@@ -13,6 +15,10 @@ import (
 
 type Increment int64
 type Change string
+type VersionFile struct {
+	Filename string
+	Key      string
+}
 
 const (
 	Major Increment = 4
@@ -61,6 +67,54 @@ func ListVersions(repo *git.Repository) ([]*semver.Version, error) {
 	sort.Sort(semver.Collection(versions))
 
 	return versions, nil
+}
+
+func CreateCommit(repo *git.Repository, message string) error {
+	sig, err := repo.DefaultSignature()
+	if err != nil {
+		return err
+	}
+
+	head, err := repo.Head()
+	if err != nil {
+		return err
+	}
+
+	idx, err := repo.Index()
+	if err != nil {
+		return err
+	}
+
+	idx.AddAll(make([]string, 0), git.IndexAddDefault, func(_, _ string) int {
+		return 0
+	})
+
+	treeId, err := idx.WriteTree()
+	if err != nil {
+		return err
+	}
+
+	err = idx.Write()
+	if err != nil {
+		return err
+	}
+
+	tree, err := repo.LookupTree(treeId)
+	if err != nil {
+		return err
+	}
+
+	commitTarget, err := repo.LookupCommit(head.Target())
+	if err != nil {
+		return err
+	}
+
+	_, err = repo.CreateCommit("refs/heads/main", sig, sig, message, tree, commitTarget)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func ListCommits(repo *git.Repository) ([]*git.Commit, error) {
@@ -191,6 +245,39 @@ func PushVersionTagToRemotes(repo *git.Repository, version semver.Version) error
 
 	for _, remote := range remotes {
 		repo.Remotes.AddPush(remote, version.String())
+	}
+
+	return nil
+}
+
+func UpdateVersionFiles(repo *git.Repository, versionFiles []VersionFile, currentVersion semver.Version, nextVersion semver.Version) error {
+	if len(versionFiles) == 0 {
+		return nil
+	}
+
+	for _, versionFile := range versionFiles {
+		r, err := regexp.Compile(fmt.Sprintf("%s(.{1,})?%s", versionFile.Key, currentVersion.String()))
+		if err != nil {
+			return err
+		}
+
+		contents, err := ioutil.ReadFile(versionFile.Filename)
+		if err != nil {
+			return err
+		}
+
+		match := string(r.Find(contents))
+		newContents := strings.Replace(string(contents), match, strings.Replace(match, currentVersion.String(), nextVersion.String(), 1), 1)
+
+		err = ioutil.WriteFile(versionFile.Filename, []byte(newContents), fs.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := CreateCommit(repo, fmt.Sprintf("bump: %s -> %s", currentVersion.String(), nextVersion.String()))
+	if err != nil {
+		return err
 	}
 
 	return nil
