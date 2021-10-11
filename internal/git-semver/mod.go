@@ -256,26 +256,40 @@ func UpdateVersionFiles(repo *git.Repository, versionFiles []VersionFile, curren
 	}
 
 	for _, versionFile := range versionFiles {
-		r, err := regexp.Compile(fmt.Sprintf("%s(.{1,})?%s", versionFile.Key, currentVersion.String()))
-		if err != nil {
-			return err
-		}
-
-		contents, err := ioutil.ReadFile(versionFile.Filename)
-		if err != nil {
-			return err
-		}
-
-		match := string(r.Find(contents))
-		newContents := strings.Replace(string(contents), match, strings.Replace(match, currentVersion.String(), nextVersion.String(), 1), 1)
-
-		err = ioutil.WriteFile(versionFile.Filename, []byte(newContents), fs.ModePerm)
+		err := updateVersionFileVersion(versionFile, currentVersion, nextVersion)
 		if err != nil {
 			return err
 		}
 	}
 
 	err := CreateCommit(repo, fmt.Sprintf("bump: %s -> %s", currentVersion.String(), nextVersion.String()))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func regexForVersionFileKey(key string, currentVersion semver.Version) (*regexp.Regexp, error) {
+	return regexp.Compile(fmt.Sprintf("%s(.{1,})?%s", key, currentVersion.String()))
+}
+
+func updateVersionFileVersion(versionFile VersionFile, currentVersion semver.Version, nextVersion semver.Version) error {
+	r, err := regexForVersionFileKey(versionFile.Key, currentVersion)
+	if err != nil {
+		return err
+	}
+
+	contents, err := ioutil.ReadFile(versionFile.Filename)
+	if err != nil {
+		return err
+	}
+
+	match := string(r.Find(contents))
+	newVersionString := strings.Replace(match, currentVersion.String(), nextVersion.String(), 1)
+	newContents := strings.Replace(string(contents), match, newVersionString, 1)
+
+	err = ioutil.WriteFile(versionFile.Filename, []byte(newContents), fs.ModePerm)
 	if err != nil {
 		return err
 	}
