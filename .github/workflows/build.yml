@@ -41,7 +41,6 @@ jobs:
       - name: Install libgit2
         run: |
           brew install libssh2
-          brew uninstall libgit2
           brew tap-new carlsberg/homebrew-tap
           brew extract --version 1.1.0 composer carlsberg/homebrew-tap
           brew install libgit2@1.1.0
