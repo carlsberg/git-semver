@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/crqra/git-semver/internal/git"
+	"github.com/carlsberg/git-semver/internal/git"
 )
 
 type Increment int64

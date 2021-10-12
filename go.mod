@@ -1,4 +1,4 @@
-module github.com/crqra/git-semver
+module github.com/carlsberg/git-semver
 
 go 1.17
 

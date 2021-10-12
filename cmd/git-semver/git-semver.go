@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/crqra/git-semver/internal/git"
-	git_semver "github.com/crqra/git-semver/internal/git-semver"
+	"github.com/carlsberg/git-semver/internal/git"
+	git_semver "github.com/carlsberg/git-semver/internal/git-semver"
 	"github.com/spf13/cobra"
 )
 
