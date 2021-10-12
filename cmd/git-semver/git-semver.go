@@ -82,7 +82,12 @@ var bumpCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		if err := git_semver.TagVersion(repo, nextVersion); err != nil {
+		versionPrefix, err := cmd.Flags().GetString("version-prefix")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err := git_semver.TagVersion(repo, nextVersion, versionPrefix); err != nil {
 			log.Fatal(err)
 		}
 
@@ -171,4 +176,5 @@ func init() {
 	rootCmd.AddCommand(latestCmd)
 
 	bumpCmd.Flags().StringArrayP("version-file", "f", make([]string, 0), "Specify version files to be updated with the new version in the format `filename:key` (i.e. `package.json:\"version\"`)")
+	bumpCmd.Flags().StringP("version-prefix", "p", "", "A prefix for the version's tag name")
 }

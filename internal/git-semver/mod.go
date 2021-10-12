@@ -211,7 +211,7 @@ func BumpVersion(version semver.Version, increment Increment) semver.Version {
 	return version
 }
 
-func TagVersion(repo *git.Repository, version semver.Version) error {
+func TagVersion(repo *git.Repository, version semver.Version, versionPrefix string) error {
 	sig, err := repo.DefaultSignature()
 	if err != nil {
 		return err
@@ -227,7 +227,9 @@ func TagVersion(repo *git.Repository, version semver.Version) error {
 		return err
 	}
 
-	repo.Tags.Create(version.String(), latestCommit, sig, fmt.Sprintf("Release %s", version.String()))
+	tagName := fmt.Sprintf("%s%s", versionPrefix, version.String())
+
+	repo.Tags.Create(tagName, latestCommit, sig, fmt.Sprintf("Release %s", version.String()))
 
 	return nil
 }
