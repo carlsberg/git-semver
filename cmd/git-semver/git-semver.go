@@ -3,11 +3,10 @@ package git_semver
 import (
 	"fmt"
 	"log"
-	"strings"
+	"os"
 
-	"github.com/Masterminds/semver"
+	"github.com/crqra/git-semver/internal/git"
 	git_semver "github.com/crqra/git-semver/internal/git-semver"
-	git "github.com/libgit2/git2go/v31"
 	"github.com/spf13/cobra"
 )
 
@@ -20,75 +19,67 @@ var bumpCmd = &cobra.Command{
 	Use:   "bump",
 	Short: "Bumps the latest version to the next version and tags it",
 	Run: func(cmd *cobra.Command, args []string) {
-		repo, err := git_semver.OpenRepository("./")
+		cwd, err := os.Getwd()
+		if err != nil {
+			log.Println(err)
+		}
+
+		dir, err := cmd.Flags().GetString("project")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		versions, err := git_semver.ListVersions(repo)
+		p, err := git_semver.NewProject(cwd, dir)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		versionsLen := len(versions) - 1
-
-		var commits []*git.Commit
-		var latestVersion *semver.Version
-
-		if versionsLen >= 0 {
-			latestVersion = versions[versionsLen]
-
-			commits, err = git_semver.ListCommitsInRange(repo, latestVersion.String(), "HEAD")
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			latestVersion, err = semver.NewVersion("0.0.0")
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			commits, err = git_semver.ListCommits(repo)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		increment := git_semver.DetectIncrement(commits)
-
-		if increment == git_semver.None {
-			log.Fatal("No increment detected to bump the version")
-		}
-
-		nextVersion := git_semver.BumpVersion(*latestVersion, increment)
-
-		versionFiles := make([]git_semver.VersionFile, 0)
 		versionFilenamesAndKeys, err := cmd.Flags().GetStringArray("version-file")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		for _, filenameAndKey := range versionFilenamesAndKeys {
-			slice := strings.Split(filenameAndKey, ":")
+		latest, err := p.LatestVersion()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-			if len(slice) != 2 {
-				log.Fatalf("%s is not correctly formatted. Should be `filename:key`", filenameAndKey)
+		next, err := p.NextVersion()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if len(versionFilenamesAndKeys) > 0 {
+			for _, filenameAndKey := range versionFilenamesAndKeys {
+				vf, err := git_semver.NewVersionFile("./", filenameAndKey)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				vf.UpdateVersion(latest, next)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 
-			versionFiles = append(versionFiles, git_semver.VersionFile{Filename: slice[0], Key: slice[1]})
+			err := git.CreateCommit(p.Repo(), fmt.Sprintf("bump: %s -> %s", latest.String(), next.String()))
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
-		if err := git_semver.UpdateVersionFiles(repo, versionFiles, *latestVersion, nextVersion); err != nil {
+		tagName := git_semver.TagNameFromProjectAndVersion(p, next)
+		tagMessage := fmt.Sprintf("Release %s", tagName)
+
+		if err := git.CreateTag(p.Repo(), tagName, tagMessage); err != nil {
 			log.Fatal(err)
 		}
 
-		if err := git_semver.TagVersion(repo, nextVersion); err != nil {
+		if err := git.PushTagToRemotes(p.Repo(), tagName); err != nil {
 			log.Fatal(err)
 		}
 
-		if err := git_semver.PushVersionTagToRemotes(repo, nextVersion); err != nil {
-			log.Fatal(err)
-		}
+		fmt.Printf("bump %s from %s to %s\n", p.Dir(), latest, next)
 	},
 }
 
@@ -96,44 +87,27 @@ var nextCmd = &cobra.Command{
 	Use:   "next",
 	Short: "Outputs the next unreleased version",
 	Run: func(cmd *cobra.Command, args []string) {
-		repo, err := git_semver.OpenRepository("./")
+		cwd, err := os.Getwd()
+		if err != nil {
+			log.Println(err)
+		}
+
+		dir, err := cmd.Flags().GetString("project")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		versions, err := git_semver.ListVersions(repo)
+		p, err := git_semver.NewProject(cwd, dir)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		versionsLen := len(versions) - 1
-
-		var commits []*git.Commit
-		var latestVersion *semver.Version
-
-		if versionsLen >= 0 {
-			latestVersion = versions[versionsLen]
-
-			commits, err = git_semver.ListCommitsInRange(repo, latestVersion.String(), "HEAD")
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			latestVersion, err = semver.NewVersion("0.0.0")
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			commits, err = git_semver.ListCommits(repo)
-			if err != nil {
-				log.Fatal(err)
-			}
+		next, err := p.NextVersion()
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		increment := git_semver.DetectIncrement(commits)
-		nextVersion := git_semver.BumpVersion(*latestVersion, increment)
-
-		fmt.Println(nextVersion.String())
+		fmt.Println(next.String())
 	},
 }
 
@@ -141,23 +115,27 @@ var latestCmd = &cobra.Command{
 	Use:   "latest",
 	Short: "Outputs the latest released version",
 	Run: func(cmd *cobra.Command, args []string) {
-		repo, err := git_semver.OpenRepository("./")
+		cwd, err := os.Getwd()
+		if err != nil {
+			log.Println(err)
+		}
+
+		dir, err := cmd.Flags().GetString("project")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		versions, err := git_semver.ListVersions(repo)
+		p, err := git_semver.NewProject(cwd, dir)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		versionsLen := len(versions) - 1
-
-		if versionsLen < 0 {
-			log.Fatal("No released versions found")
+		latest, err := p.LatestVersion()
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		fmt.Println(versions[versionsLen].String())
+		fmt.Println(latest.String())
 	},
 }
 
@@ -169,6 +147,7 @@ func init() {
 	rootCmd.AddCommand(bumpCmd)
 	rootCmd.AddCommand(nextCmd)
 	rootCmd.AddCommand(latestCmd)
+	rootCmd.PersistentFlags().StringP("project", "p", "", "Project")
 
 	bumpCmd.Flags().StringArrayP("version-file", "f", make([]string, 0), "Specify version files to be updated with the new version in the format `filename:key` (i.e. `package.json:\"version\"`)")
 }
