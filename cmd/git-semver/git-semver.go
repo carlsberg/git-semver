@@ -88,7 +88,7 @@ func init() {
 func newProjectOrPanic(cmd *cobra.Command) *git_semver.Project {
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 
 	dir, err := cmd.Flags().GetString("project")
