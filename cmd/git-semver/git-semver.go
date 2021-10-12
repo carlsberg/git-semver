@@ -3,6 +3,7 @@ package git_semver
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	git_semver "github.com/crqra/git-semver/internal/git-semver"
@@ -60,6 +61,26 @@ var bumpCmd = &cobra.Command{
 		}
 
 		nextVersion := git_semver.BumpVersion(*latestVersion, increment)
+
+		versionFiles := make([]git_semver.VersionFile, 0)
+		versionFilenamesAndKeys, err := cmd.Flags().GetStringArray("version-file")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, filenameAndKey := range versionFilenamesAndKeys {
+			slice := strings.Split(filenameAndKey, ":")
+
+			if len(slice) != 2 {
+				log.Fatalf("%s is not correctly formatted. Should be `filename:key`", filenameAndKey)
+			}
+
+			versionFiles = append(versionFiles, git_semver.VersionFile{Filename: slice[0], Key: slice[1]})
+		}
+
+		if err := git_semver.UpdateVersionFiles(repo, versionFiles, *latestVersion, nextVersion); err != nil {
+			log.Fatal(err)
+		}
 
 		if err := git_semver.TagVersion(repo, nextVersion); err != nil {
 			log.Fatal(err)
@@ -148,4 +169,6 @@ func init() {
 	rootCmd.AddCommand(bumpCmd)
 	rootCmd.AddCommand(nextCmd)
 	rootCmd.AddCommand(latestCmd)
+
+	bumpCmd.Flags().StringArrayP("version-file", "f", make([]string, 0), "Specify version files to be updated with the new version in the format `filename:key` (i.e. `package.json:\"version\"`)")
 }

@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.17', '1.16', '1.15' ]
+        go: [ '1.17', '1.16' ]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -32,7 +32,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        go: [ '1.17', '1.16', '1.15' ]
+        go: [ '1.17', '1.16' ]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -41,14 +41,14 @@ jobs:
       - name: Install libgit2
         run: |
           brew install libssh2
-          brew install libgit2
+          brew install carlsberg/tap/libgit2@1.1.0
       - run: go build
 
   # build-windows:
   #   runs-on: windows-latest
   #   strategy:
   #     matrix:
-  #       go: [ '1.17', '1.16', '1.15' ]
+  #       go: [ '1.17', '1.16' ]
   #   steps:
   #     - uses: actions/checkout@v2
   #     - uses: actions/setup-go@v2
