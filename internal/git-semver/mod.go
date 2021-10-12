@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Masterminds/semver"
+	"github.com/crqra/git-semver/internal/version"
 	git "github.com/libgit2/git2go/v31"
 )
 
@@ -38,33 +38,24 @@ func OpenRepository(path string) (*git.Repository, error) {
 	return git.OpenRepository(path)
 }
 
-func ListVersions(repo *git.Repository) ([]*semver.Version, error) {
+func ListVersions(repo *git.Repository) ([]*version.Version, error) {
 	tags, err := repo.Tags.List()
 	if err != nil {
-		return make([]*semver.Version, 0), err
+		return make([]*version.Version, 0), err
 	}
 
-	var versions []*semver.Version
-
-	reg, err := regexp.Compile(semver.SemVerRegex)
-	if err != nil {
-		return make([]*semver.Version, 0), err
-	}
+	var versions []*version.Version
 
 	for _, tag := range tags {
-		if !reg.MatchString(tag) {
-			continue
-		}
-
-		version, err := semver.NewVersion(tag)
+		version, err := version.NewVersionFromTag(tag)
 		if err != nil {
-			return make([]*semver.Version, 0), err
+			continue
 		}
 
 		versions = append(versions, version)
 	}
 
-	sort.Sort(semver.Collection(versions))
+	sort.Sort(version.Collection(versions))
 
 	return versions, nil
 }
@@ -196,7 +187,7 @@ func DetectIncrement(commits []*git.Commit) Increment {
 	return increment
 }
 
-func BumpVersion(version semver.Version, increment Increment) semver.Version {
+func BumpVersion(version *version.Version, increment Increment) *version.Version {
 	switch increment {
 	case Major:
 		return version.IncMajor()
@@ -211,7 +202,7 @@ func BumpVersion(version semver.Version, increment Increment) semver.Version {
 	return version
 }
 
-func TagVersion(repo *git.Repository, version semver.Version, versionPrefix string) error {
+func TagVersion(repo *git.Repository, version *version.Version, versionPrefix string) error {
 	sig, err := repo.DefaultSignature()
 	if err != nil {
 		return err
@@ -234,14 +225,14 @@ func TagVersion(repo *git.Repository, version semver.Version, versionPrefix stri
 	return nil
 }
 
-func PushVersionTagToRemotes(repo *git.Repository, version semver.Version) error {
+func PushVersionTagToRemotes(repo *git.Repository, version *version.Version) error {
 	remotes, err := repo.Remotes.List()
 	if err != nil {
 		return err
 	}
 
 	if len(remotes) == 0 {
-		log.Printf("No remotes found, skipping pushing tag %s\n", version.String())
+		log.Printf("No remotes found, skipping pushing tag for version %s\n", version.String())
 		return nil
 	}
 
@@ -252,7 +243,7 @@ func PushVersionTagToRemotes(repo *git.Repository, version semver.Version) error
 	return nil
 }
 
-func UpdateVersionFiles(repo *git.Repository, versionFiles []VersionFile, currentVersion semver.Version, nextVersion semver.Version) error {
+func UpdateVersionFiles(repo *git.Repository, versionFiles []VersionFile, currentVersion *version.Version, nextVersion *version.Version) error {
 	if len(versionFiles) == 0 {
 		return nil
 	}
@@ -272,11 +263,11 @@ func UpdateVersionFiles(repo *git.Repository, versionFiles []VersionFile, curren
 	return nil
 }
 
-func regexForVersionFileKey(key string, currentVersion semver.Version) (*regexp.Regexp, error) {
+func regexForVersionFileKey(key string, currentVersion *version.Version) (*regexp.Regexp, error) {
 	return regexp.Compile(fmt.Sprintf("%s(.{1,})?%s", key, currentVersion.String()))
 }
 
-func updateVersionFileVersion(versionFile VersionFile, currentVersion semver.Version, nextVersion semver.Version) error {
+func updateVersionFileVersion(versionFile VersionFile, currentVersion *version.Version, nextVersion *version.Version) error {
 	r, err := regexForVersionFileKey(versionFile.Key, currentVersion)
 	if err != nil {
 		return err

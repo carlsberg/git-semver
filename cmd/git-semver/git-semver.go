@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Masterminds/semver"
 	git_semver "github.com/crqra/git-semver/internal/git-semver"
+	"github.com/crqra/git-semver/internal/version"
 	git "github.com/libgit2/git2go/v31"
 	"github.com/spf13/cobra"
 )
@@ -33,17 +33,17 @@ var bumpCmd = &cobra.Command{
 		versionsLen := len(versions) - 1
 
 		var commits []*git.Commit
-		var latestVersion *semver.Version
+		var latestVersion *version.Version
 
 		if versionsLen >= 0 {
 			latestVersion = versions[versionsLen]
 
-			commits, err = git_semver.ListCommitsInRange(repo, latestVersion.String(), "HEAD")
+			commits, err = git_semver.ListCommitsInRange(repo, latestVersion.Tag(), "HEAD")
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			latestVersion, err = semver.NewVersion("0.0.0")
+			latestVersion, err = version.NewVersion("0.0.0")
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -60,7 +60,7 @@ var bumpCmd = &cobra.Command{
 			log.Fatal("No increment detected to bump the version")
 		}
 
-		nextVersion := git_semver.BumpVersion(*latestVersion, increment)
+		nextVersion := git_semver.BumpVersion(latestVersion, increment)
 
 		versionFiles := make([]git_semver.VersionFile, 0)
 		versionFilenamesAndKeys, err := cmd.Flags().GetStringArray("version-file")
@@ -78,7 +78,7 @@ var bumpCmd = &cobra.Command{
 			versionFiles = append(versionFiles, git_semver.VersionFile{Filename: slice[0], Key: slice[1]})
 		}
 
-		if err := git_semver.UpdateVersionFiles(repo, versionFiles, *latestVersion, nextVersion); err != nil {
+		if err := git_semver.UpdateVersionFiles(repo, versionFiles, latestVersion, nextVersion); err != nil {
 			log.Fatal(err)
 		}
 
@@ -114,17 +114,17 @@ var nextCmd = &cobra.Command{
 		versionsLen := len(versions) - 1
 
 		var commits []*git.Commit
-		var latestVersion *semver.Version
+		var latestVersion *version.Version
 
 		if versionsLen >= 0 {
 			latestVersion = versions[versionsLen]
 
-			commits, err = git_semver.ListCommitsInRange(repo, latestVersion.String(), "HEAD")
+			commits, err = git_semver.ListCommitsInRange(repo, latestVersion.Tag(), "HEAD")
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			latestVersion, err = semver.NewVersion("0.0.0")
+			latestVersion, err = version.NewVersion("0.0.0")
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -136,7 +136,7 @@ var nextCmd = &cobra.Command{
 		}
 
 		increment := git_semver.DetectIncrement(commits)
-		nextVersion := git_semver.BumpVersion(*latestVersion, increment)
+		nextVersion := git_semver.BumpVersion(latestVersion, increment)
 
 		fmt.Println(nextVersion.String())
 	},
