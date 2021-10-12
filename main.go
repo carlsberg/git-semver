@@ -1,7 +1,7 @@
 package main
 
 import (
-	git_semver "github.com/crqra/git-semver/cmd/git-semver"
+	git_semver "github.com/carlsberg/git-semver/cmd/git-semver"
 	"github.com/spf13/cobra"
 )
 
