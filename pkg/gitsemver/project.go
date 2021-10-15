@@ -1,7 +1,6 @@
 package gitsemver
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -156,7 +155,7 @@ func (p Project) LatestVersion() (*semver.Version, error) {
 	versionsLen := len(versions) - 1
 
 	if versionsLen < 0 {
-		return &semver.Version{}, errors.New("no released versions found")
+		return semver.NewVersion("0.0.0")
 	}
 
 	return versions[versionsLen], nil
