@@ -55,7 +55,7 @@ func CreateCommit(repo *git.Repository, message string) error {
 		return err
 	}
 
-	_, err = repo.CreateCommit("refs/heads/main", sig, sig, message, tree, commitTarget)
+	_, err = repo.CreateCommit(head.Target(), sig, sig, message, tree, commitTarget)
 	if err != nil {
 		return err
 	}
