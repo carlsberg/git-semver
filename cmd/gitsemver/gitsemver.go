@@ -1,4 +1,4 @@
-package git_semver
+package gitsemver
 
 import (
 	"fmt"
@@ -6,8 +6,7 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver"
-	"github.com/carlsberg/git-semver/internal/git"
-	git_semver "github.com/carlsberg/git-semver/internal/git-semver"
+	"github.com/carlsberg/git-semver/pkg/gitsemver"
 	"github.com/spf13/cobra"
 )
 
@@ -25,25 +24,8 @@ var bumpCmd = &cobra.Command{
 		latest := getLatestVersionOrFail(project)
 		next := getNextVersionOrFail(project)
 
-		if len(versionFilenamesAndKeys) > 0 {
-			for _, filenameAndKey := range versionFilenamesAndKeys {
-				updateVersionFileOrPanic(filenameAndKey, latest, next)
-			}
-
-			if err := git.CreateCommit(project.Repo(), fmt.Sprintf("bump: %s -> %s", latest.String(), next.String())); err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		tagName := git_semver.TagNameFromProjectAndVersion(project, next)
-		tagMessage := fmt.Sprintf("Release %s", tagName)
-
-		if err := git.CreateTag(project.Repo(), tagName, tagMessage); err != nil {
-			log.Fatal(err)
-		}
-
-		if err := git.PushTagToRemotes(project.Repo(), tagName); err != nil {
-			log.Fatal(err)
+		if err := project.Bump(versionFilenamesAndKeys); err != nil {
+			log.Fatalln(err)
 		}
 
 		fmt.Printf("bump %s from %s to %s\n", project.Dir(), latest, next)
@@ -85,50 +67,38 @@ func init() {
 	bumpCmd.Flags().StringArrayP("version-file", "f", make([]string, 0), "Specify version files to be updated with the new version in the format `filename:key` (i.e. `package.json:\"version\"`)")
 }
 
-func newProjectOrPanic(cmd *cobra.Command) *git_semver.Project {
+func newProjectOrPanic(cmd *cobra.Command) *gitsemver.Project {
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	dir, err := cmd.Flags().GetString("project")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
-	project, err := git_semver.NewProject(cwd, dir)
+	project, err := gitsemver.NewProject(cwd, dir)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return project
 }
 
-func updateVersionFileOrPanic(filenameAndKey string, latest, next *semver.Version) {
-	vf, err := git_semver.NewVersionFile("./", filenameAndKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	vf.UpdateVersion(latest, next)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func getLatestVersionOrFail(project *git_semver.Project) *semver.Version {
+func getLatestVersionOrFail(project *gitsemver.Project) *semver.Version {
 	latest, err := project.LatestVersion()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return latest
 }
 
-func getNextVersionOrFail(project *git_semver.Project) *semver.Version {
+func getNextVersionOrFail(project *gitsemver.Project) *semver.Version {
 	next, err := project.NextVersion()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return next
@@ -137,7 +107,7 @@ func getNextVersionOrFail(project *git_semver.Project) *semver.Version {
 func getVersionFilenamesAndKeysOrFail(cmd *cobra.Command) []string {
 	versionFilenamesAndKeys, err := cmd.Flags().GetStringArray("version-file")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	return versionFilenamesAndKeys

@@ -1,4 +1,4 @@
-package git_semver
+package gitsemver
 
 import (
 	"errors"
@@ -214,6 +214,49 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 	}
 
 	return increment, nil
+}
+
+func (p *Project) Bump(versionFilenamesAndKeys []string) error {
+	latest, err := p.LatestVersion()
+	if err != nil {
+		return err
+	}
+
+	next, err := p.NextVersion()
+	if err != nil {
+		return err
+	}
+
+	if len(versionFilenamesAndKeys) > 0 {
+		for _, filenameAndKey := range versionFilenamesAndKeys {
+			vf, err := NewVersionFile("./", filenameAndKey)
+			if err != nil {
+				return err
+			}
+
+			vf.UpdateVersion(latest, next)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := git.CreateCommit(p.Repo(), fmt.Sprintf("bump: %s -> %s", latest.String(), next.String())); err != nil {
+			return err
+		}
+	}
+
+	tagName := TagNameFromProjectAndVersion(p, next)
+	tagMessage := fmt.Sprintf("Release %s", tagName)
+
+	if err := git.CreateTag(p.Repo(), tagName, tagMessage); err != nil {
+		return err
+	}
+
+	if err := git.PushTagToRemotes(p.Repo(), tagName); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func TagNameFromProjectAndVersion(p *Project, v *semver.Version) string {
