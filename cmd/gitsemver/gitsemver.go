@@ -1,4 +1,4 @@
-package git_semver
+package gitsemver
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Masterminds/semver"
-	git_semver "github.com/carlsberg/git-semver/pkg/git-semver"
+	"github.com/carlsberg/git-semver/pkg/gitsemver"
 	"github.com/spf13/cobra"
 )
 
@@ -67,7 +67,7 @@ func init() {
 	bumpCmd.Flags().StringArrayP("version-file", "f", make([]string, 0), "Specify version files to be updated with the new version in the format `filename:key` (i.e. `package.json:\"version\"`)")
 }
 
-func newProjectOrPanic(cmd *cobra.Command) *git_semver.Project {
+func newProjectOrPanic(cmd *cobra.Command) *gitsemver.Project {
 	cwd, err := os.Getwd()
 	if err != nil {
 		log.Fatalln(err)
@@ -78,7 +78,7 @@ func newProjectOrPanic(cmd *cobra.Command) *git_semver.Project {
 		log.Fatalln(err)
 	}
 
-	project, err := git_semver.NewProject(cwd, dir)
+	project, err := gitsemver.NewProject(cwd, dir)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -86,7 +86,7 @@ func newProjectOrPanic(cmd *cobra.Command) *git_semver.Project {
 	return project
 }
 
-func getLatestVersionOrFail(project *git_semver.Project) *semver.Version {
+func getLatestVersionOrFail(project *gitsemver.Project) *semver.Version {
 	latest, err := project.LatestVersion()
 	if err != nil {
 		log.Fatalln(err)
@@ -95,7 +95,7 @@ func getLatestVersionOrFail(project *git_semver.Project) *semver.Version {
 	return latest
 }
 
-func getNextVersionOrFail(project *git_semver.Project) *semver.Version {
+func getNextVersionOrFail(project *gitsemver.Project) *semver.Version {
 	next, err := project.NextVersion()
 	if err != nil {
 		log.Fatalln(err)

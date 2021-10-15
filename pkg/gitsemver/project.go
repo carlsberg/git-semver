@@ -1,4 +1,4 @@
-package git_semver
+package gitsemver
 
 import (
 	"errors"
