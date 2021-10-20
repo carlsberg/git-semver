@@ -2,164 +2,142 @@ package git
 
 import (
 	"fmt"
-	"log"
+	"os"
 	"regexp"
 
-	git "github.com/libgit2/git2go/v31"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
 )
 
-type Commit = git.Commit
+type Commit = object.Commit
+type Hash = plumbing.Hash
 type Repository = git.Repository
 
-func OpenRepository(path string) (*git.Repository, error) {
-	return git.OpenRepository(path)
+func OpenRepository(path string) (*Repository, error) {
+	return git.PlainOpen(path)
 }
 
-func CreateCommit(repo *git.Repository, message string) error {
-	sig, err := repo.DefaultSignature()
+func CreateCommit(repo *Repository, message string) (Hash, error) {
+	tree, err := repo.Worktree()
 	if err != nil {
-		return err
+		return plumbing.Hash{}, err
 	}
 
-	head, err := repo.Head()
-	if err != nil {
-		return err
+	commitOpts := &git.CommitOptions{
+		All: true,
 	}
 
-	idx, err := repo.Index()
-	if err != nil {
-		return err
-	}
-
-	idx.AddAll(make([]string, 0), git.IndexAddDefault, func(_, _ string) int {
-		return 0
-	})
-
-	treeId, err := idx.WriteTree()
-	if err != nil {
-		return err
-	}
-
-	err = idx.Write()
-	if err != nil {
-		return err
-	}
-
-	tree, err := repo.LookupTree(treeId)
-	if err != nil {
-		return err
-	}
-
-	commitTarget, err := repo.LookupCommit(head.Target())
-	if err != nil {
-		return err
-	}
-
-	_, err = repo.CreateCommit(head.Name(), sig, sig, message, tree, commitTarget)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tree.Commit(message, commitOpts)
 }
 
-func ListCommits(repo *git.Repository) ([]*git.Commit, error) {
-	revwalk, err := repo.Walk()
+func ListAllCommits(repo *Repository) ([]*Commit, error) {
+	iter, err := repo.CommitObjects()
 	if err != nil {
-		return make([]*git.Commit, 0), err
+		return nil, err
 	}
 
-	if err := revwalk.PushHead(); err != nil {
-		return make([]*git.Commit, 0), err
-	}
+	defer iter.Close()
 
-	var commits []*git.Commit
+	var commits []*Commit
 
-	err = revwalk.Iterate(func(commit *git.Commit) bool {
-		commits = append(commits, commit)
-		return true
+	err = iter.ForEach(func(c *Commit) error {
+		commits = append(commits, c)
+		return nil
 	})
 	if err != nil {
-		return make([]*git.Commit, 0), err
+		return nil, err
 	}
 
 	return commits, nil
 }
 
-func ListCommitsInRange(repo *git.Repository, lRange string, rRange string) ([]*git.Commit, error) {
-	revwalk, err := repo.Walk()
+func ListCommitsFromTagToHead(repo *Repository, tag string, pathPrefix string) ([]*Commit, error) {
+	start, err := repo.ResolveRevision(plumbing.Revision(fmt.Sprintf("refs/tags/%s", tag)))
 	if err != nil {
-		return make([]*git.Commit, 0), err
+		return nil, err
 	}
 
-	if err := revwalk.PushRange(fmt.Sprintf("%s..%s", lRange, rRange)); err != nil {
-		return make([]*git.Commit, 0), err
+	end, err := repo.ResolveRevision("HEAD")
+	if err != nil {
+		return nil, err
 	}
 
-	var commits []*git.Commit
+	iter, err := repo.Log(&git.LogOptions{From: *end})
+	if err != nil {
+		return nil, err
+	}
 
-	err = revwalk.Iterate(func(commit *git.Commit) bool {
-		commits = append(commits, commit)
-		return true
+	var commits []*Commit
+
+	err = iter.ForEach(func(c *object.Commit) error {
+		if c.Hash == *start {
+			return storer.ErrStop
+		}
+
+		commits = append(commits, c)
+
+		return nil
 	})
 	if err != nil {
-		return make([]*git.Commit, 0), err
+		return nil, err
 	}
 
 	return commits, nil
 }
 
-func FindTags(repo *git.Repository, reg *regexp.Regexp) ([]string, error) {
+func FindTags(repo *Repository, reg *regexp.Regexp) ([]string, error) {
 	var matchTags []string
 
-	tags, err := repo.Tags.List()
+	tags, err := repo.Tags()
 	if err != nil {
-		return make([]string, 0), nil
+		return nil, err
 	}
 
-	for _, tag := range tags {
-		if reg.MatchString(tag) {
-			matchTags = append(matchTags, tag)
+	defer tags.Close()
+
+	err = tags.ForEach(func(ref *plumbing.Reference) error {
+		if reg.MatchString(ref.Name().Short()) {
+			matchTags = append(matchTags, ref.Name().Short())
 		}
-	}
+
+		return nil
+	})
 
 	return matchTags, nil
 }
 
-func CreateTag(repo *git.Repository, tagName, message string) error {
-	sig, err := repo.DefaultSignature()
+func CreateTag(repo *Repository, name, message string) error {
+	ref, err := repo.Head()
 	if err != nil {
 		return err
 	}
 
-	latestCommitObject, err := repo.RevparseSingle("HEAD")
-	if err != nil {
-		return err
+	createTagOpts := &git.CreateTagOptions{
+		Message: message,
 	}
 
-	latestCommit, err := latestCommitObject.AsCommit()
-	if err != nil {
-		return err
-	}
+	_, err = repo.CreateTag(name, ref.Hash(), createTagOpts)
 
-	repo.Tags.Create(tagName, latestCommit, sig, message)
-
-	return nil
+	return err
 }
 
-func PushTagToRemotes(repo *git.Repository, tagName string) error {
-	remotes, err := repo.Remotes.List()
-	if err != nil {
-		return err
-	}
-
-	if len(remotes) == 0 {
-		log.Printf("No remotes found, skipping pushing tag %s\n", tagName)
+func PushTagsToOrigin(repo *Repository) error {
+	// skip pushing if remote doesn't exist
+	if _, err := repo.Remote("origin"); err != nil {
 		return nil
 	}
 
-	for _, remote := range remotes {
-		repo.Remotes.AddPush(remote, tagName)
+	pushOpts := &git.PushOptions{
+		RemoteName: "origin",
+		Progress:   os.Stdout,
+		RefSpecs:   []config.RefSpec{config.RefSpec("refs/tags/*:refs/tags/*")},
+	}
+
+	if err := repo.Push(pushOpts); err != nil {
+		return err
 	}
 
 	return nil
