@@ -9,9 +9,17 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
+      - id: release-bot
+        name: Authenticate with Release Bot
+        uses: getsentry/action-github-app-token@v1
+        with:
+          app_id: ${{ secrets.CB_RELEASE_BOT_ID }}
+          private_key: "${{ secrets.CB_RELEASE_BOT_PRIVATE_KEY }}"
+
       - name: Checkout
         uses: actions/checkout@v2
         with:
+          token: ${{ steps.release-bot.outputs.token }}
           fetch-depth: 0
 
       - uses: actions/setup-go@v2
@@ -21,17 +29,10 @@ jobs:
       - name: Install Git SemVer
         run: go install .
         
-      - id: release-bot
-        name: Authenticate with Release Bot
-        uses: getsentry/action-github-app-token@v1
-        with:
-          app_id: ${{ secrets.CB_RELEASE_BOT_ID }}
-          private_key: "${{ secrets.CB_RELEASE_BOT_PRIVATE_KEY }}"
-        
       - name: Setup Git Credentials
         uses: fusion-engineering/setup-git-credentials@v2
         with:
-          credentials: https://carlsberg-release-bot[bot]:${{ steps.release-bot.outputs.token }}@github.com/
+          credentials: https://${{ secrets.CB_RELEASE_BOT_NAME }}:${{ steps.release-bot.outputs.token }}@github.com/
 
       - name: Bump Version
         run: |
