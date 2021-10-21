@@ -172,12 +172,12 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 	var commits []*git.Commit
 
 	if versionsLen >= 0 {
-		commits, err = git.ListCommitsInRange(p.repo, TagNameFromProjectAndVersion(p, versions[versionsLen]), "HEAD")
+		commits, err = git.ListCommitsFromTagToHead(p.repo, TagNameFromProjectAndVersion(p, versions[versionsLen]), ".")
 		if err != nil {
 			return None, err
 		}
 	} else {
-		commits, err = git.ListCommits(p.repo)
+		commits, err = git.ListAllCommits(p.repo)
 		if err != nil {
 			return None, err
 		}
@@ -186,7 +186,7 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 	var increment = None
 
 	for _, commit := range commits {
-		var commitMessageArr = strings.Split(commit.Message(), ":")
+		var commitMessageArr = strings.Split(commit.Message, ":")
 
 		if len(commitMessageArr) == 0 {
 			continue
@@ -239,7 +239,7 @@ func (p *Project) Bump(versionFilenamesAndKeys []string) error {
 			}
 		}
 
-		if err := git.CreateCommit(p.Repo(), fmt.Sprintf("bump: %s -> %s", latest.String(), next.String())); err != nil {
+		if _, err := git.CreateCommit(p.Repo(), fmt.Sprintf("bump: %s -> %s", latest.String(), next.String())); err != nil {
 			return err
 		}
 	}
@@ -251,7 +251,7 @@ func (p *Project) Bump(versionFilenamesAndKeys []string) error {
 		return err
 	}
 
-	if err := git.PushTagToRemotes(p.Repo(), tagName); err != nil {
+	if err := git.PushTagsToOrigin(p.Repo()); err != nil {
 		return err
 	}
 
