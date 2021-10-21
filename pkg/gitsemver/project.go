@@ -13,6 +13,8 @@ import (
 
 type Increment int64
 type Change string
+type AuthMethod = git.AuthMethod
+type BasicAuth = git.BasicAuth
 
 const (
 	Major Increment = 4
@@ -215,7 +217,7 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 	return increment, nil
 }
 
-func (p *Project) Bump(versionFilenamesAndKeys []string) error {
+func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod) error {
 	latest, err := p.LatestVersion()
 	if err != nil {
 		return err
@@ -251,7 +253,7 @@ func (p *Project) Bump(versionFilenamesAndKeys []string) error {
 		return err
 	}
 
-	if err := git.PushTagsToOrigin(p.Repo()); err != nil {
+	if err := git.PushTagsToOrigin(p.Repo(), auth); err != nil {
 		return err
 	}
 

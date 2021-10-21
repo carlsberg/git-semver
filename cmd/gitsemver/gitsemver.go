@@ -21,10 +21,21 @@ var bumpCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		project := newProjectOrPanic(cmd)
 		versionFilenamesAndKeys := getVersionFilenamesAndKeysOrFail(cmd)
+		username := getUsernameOrFail(cmd)
+		password := getPasswordOrFail(cmd)
 		latest := getLatestVersionOrFail(project)
 		next := getNextVersionOrFail(project)
 
-		if err := project.Bump(versionFilenamesAndKeys); err != nil {
+		var auth gitsemver.AuthMethod = nil
+
+		if username != "" && password != "" {
+			auth = &gitsemver.BasicAuth{
+				Username: username,
+				Password: password,
+			}
+		}
+
+		if err := project.Bump(versionFilenamesAndKeys, auth); err != nil {
 			log.Fatalln(err)
 		}
 
@@ -65,6 +76,8 @@ func init() {
 	rootCmd.PersistentFlags().StringP("project", "p", "", "Project")
 
 	bumpCmd.Flags().StringArrayP("version-file", "f", make([]string, 0), "Specify version files to be updated with the new version in the format `filename:key` (i.e. `package.json:\"version\"`)")
+	bumpCmd.Flags().StringP("username", "u", "", "Username to use in HTTP basic authentication")
+	bumpCmd.Flags().StringP("password", "P", "", "Password to use in HTTP basic authentication")
 }
 
 func newProjectOrPanic(cmd *cobra.Command) *gitsemver.Project {
@@ -111,4 +124,22 @@ func getVersionFilenamesAndKeysOrFail(cmd *cobra.Command) []string {
 	}
 
 	return versionFilenamesAndKeys
+}
+
+func getUsernameOrFail(cmd *cobra.Command) string {
+	username, err := cmd.Flags().GetString("username")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return username
+}
+
+func getPasswordOrFail(cmd *cobra.Command) string {
+	password, err := cmd.Flags().GetString("password")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return password
 }
