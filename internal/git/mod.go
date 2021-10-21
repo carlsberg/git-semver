@@ -10,6 +10,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
 type Commit = object.Commit
@@ -134,6 +135,10 @@ func PushTagsToOrigin(repo *Repository) error {
 		RemoteName: "origin",
 		Progress:   os.Stdout,
 		RefSpecs:   []config.RefSpec{config.RefSpec("refs/tags/*:refs/tags/*")},
+		Auth: &http.BasicAuth{
+			Username: "git",
+			Password: os.Getenv("GITHUB_TOKEN"),
+		},
 	}
 
 	if err := repo.Push(pushOpts); err != nil {
