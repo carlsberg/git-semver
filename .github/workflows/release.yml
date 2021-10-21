@@ -29,10 +29,10 @@ jobs:
       - name: Install Git SemVer
         run: go install .
         
-      - name: Setup Git Credentials
-        uses: fusion-engineering/setup-git-credentials@v2
-        with:
-          credentials: https://${{ secrets.CB_RELEASE_BOT_NAME }}:${{ steps.release-bot.outputs.token }}@github.com/
+      # - name: Setup Git Credentials
+      #   uses: fusion-engineering/setup-git-credentials@v2
+      #   with:
+      #     credentials: https://${{ secrets.CB_RELEASE_BOT_NAME }}:${{ steps.release-bot.outputs.token }}@github.com/
 
       - name: Bump Version
         run: |
