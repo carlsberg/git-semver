@@ -10,12 +10,15 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
 type Commit = object.Commit
 type Hash = plumbing.Hash
 type Repository = git.Repository
+type AuthMethod = transport.AuthMethod
+type BasicAuth = http.BasicAuth
 
 func OpenRepository(path string) (*Repository, error) {
 	return git.PlainOpen(path)
@@ -125,7 +128,7 @@ func CreateTag(repo *Repository, name, message string) error {
 	return err
 }
 
-func PushTagsToOrigin(repo *Repository) error {
+func PushTagsToOrigin(repo *Repository, auth AuthMethod) error {
 	// skip pushing if remote doesn't exist
 	if _, err := repo.Remote("origin"); err != nil {
 		return nil
@@ -135,10 +138,7 @@ func PushTagsToOrigin(repo *Repository) error {
 		RemoteName: "origin",
 		Progress:   os.Stdout,
 		RefSpecs:   []config.RefSpec{config.RefSpec("refs/tags/*:refs/tags/*")},
-		Auth: &http.BasicAuth{
-			Username: "git",
-			Password: os.Getenv("GITHUB_TOKEN"),
-		},
+		Auth:       auth,
 	}
 
 	if err := repo.Push(pushOpts); err != nil {
