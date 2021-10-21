@@ -22,7 +22,10 @@ jobs:
         run: go install .
 
       - name: Bump Version
-        run: git semver bump
+        run: |
+          git config --global user.name "${{ secrets.CB_RELEASE_BOT_NAME }}"
+          git config --global user.email "${{ secrets.CB_RELEASE_BOT_EMAIL }}"
+          git semver bump
 
       - id: release-bot
         name: Authenticate with Release Bot
