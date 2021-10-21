@@ -33,15 +33,9 @@ jobs:
         run: |
           git config --global user.name "${{ secrets.CB_RELEASE_BOT_NAME }}"
           git config --global user.email "${{ secrets.CB_RELEASE_BOT_EMAIL }}"
-          # git config --local --replace-all url.https://github.com/.insteadOf ssh://git@github.com/
-          # git config --local --add url.https://git:${{ steps.release-bot.outputs.token }}@github.com/.insteadOf git@github.com:
-          # debugging purposes
-          cat .git/config
 
       - name: Bump Version
-        run: git semver bump
-        env:
-          GITHUB_TOKEN: ${{ steps.release-bot.outputs.token }}
+        run: git semver bump -u ${{ secrets.CB_RELEASE_BOT_NAME }} -P ${{ steps.release-bot.outputs.token }}
 
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v2
