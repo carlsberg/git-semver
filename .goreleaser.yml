@@ -17,3 +17,15 @@ archives:
       windows: Windows
       386: i386
       amd64: x86_64
+brews:
+  - tap:
+      owner: carlsberg
+      name: homebrew-tap
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@carlosbecker.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    folder: Formula
+    homepage: "https://github.com/carlsberg/git-semver"
+    description: "Git extension to easily manage your project's version based on Semantic Versioning and Conventional Commits"
+    license: "MIT"
