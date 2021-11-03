@@ -5,7 +5,6 @@ import (
 	"log"
 	"regexp"
 	"sort"
-	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/carlsberg/git-semver/internal/git"
@@ -23,11 +22,11 @@ const (
 	None  Increment = 0
 )
 
-const (
-	Feature        Change = "feat"
-	Fix            Change = "fix"
-	Refactor       Change = "refactor"
-	BreakingChange Change = "BREAKING CHANGE"
+var (
+	breaking     = regexp.MustCompile("(?im).*breaking change:.*")
+	breakingBang = regexp.MustCompile(`(?im).*(\w+)(\(.*\))?!:.*`)
+	feature      = regexp.MustCompile(`(?im).*feat(\(.*\))?:.*`)
+	patch        = regexp.MustCompile(`(?im).*fix(\(.*\))?:.*`)
 )
 
 type Project struct {
@@ -188,25 +187,18 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 	var increment = None
 
 	for _, commit := range commits {
-		var commitMessageArr = strings.Split(commit.Message, ":")
+		commitIncrement := None
 
-		if len(commitMessageArr) == 0 {
-			continue
+		if breaking.MatchString(commit.Message) || breakingBang.MatchString(commit.Message) {
+			commitIncrement = Major
 		}
 
-		var commitIncrement = None
-		var commitChange = Change(commitMessageArr[0])
-
-		if commitChange == Feature {
+		if feature.MatchString(commit.Message) {
 			commitIncrement = Minor
 		}
 
-		if commitChange == Fix {
+		if patch.MatchString(commit.Message) {
 			commitIncrement = Patch
-		}
-
-		if commitChange == Refactor || commitChange == BreakingChange {
-			commitIncrement = Major
 		}
 
 		if commitIncrement > increment {
