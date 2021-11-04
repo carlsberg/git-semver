@@ -17,7 +17,7 @@ $ brew install carlsberg/tap/git-semver
 Requires `go >= 1.16`.
 
 ```shell
-$ go install https://github.com/carlsberg/git-semver
+$ go install github.com/carlsberg/git-semver@latest
 ```
 
 ## Commands
@@ -28,11 +28,11 @@ Bumps the latest version to the next version, creates a tag and pushes it to `or
 
 **Options:**
 
-| Name                | Description                                                                |
-| ------------------- | -------------------------------------------------------------------------- |
-| `-P, --password     | Password to use in HTTP basic authentication (useful for CI/CD pipelines)  |
-| `-u, --username     | Username to use in HTTP basic authentication (useful for CI/CD pipelines)  |
-| `-f, --version-file | Version files that should be updated. Format should be `filename:key`      |
+| Name                 | Description                                                                |
+| -------------------- | -------------------------------------------------------------------------- |
+| `-P, --password`     | Password to use in HTTP basic authentication (useful for CI/CD pipelines)  |
+| `-u, --username`     | Username to use in HTTP basic authentication (useful for CI/CD pipelines)  |
+| `-f, --version-file` | Version files that should be updated. Format should be `filename:key`      |
 
 **Example:**
 
@@ -40,6 +40,7 @@ Bumps the latest version to the next version, creates a tag and pushes it to `or
 $ git commit -am "fix: something important"
 $ git semver bump -f package.json:version
 bump from 0.0.0 to 0.0.1
+```
 
 #### `git semver latest`
 
