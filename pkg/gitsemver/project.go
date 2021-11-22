@@ -107,7 +107,7 @@ func (p Project) Versions() ([]*semver.Version, error) {
 	return versions, nil
 }
 
-func (p Project) NextVersion() (*semver.Version, error) {
+func (p Project) NextVersion(vPrefix bool) (*semver.Version, error) {
 	versions, err := p.Versions()
 	if err != nil {
 		log.Fatal(err)
@@ -120,7 +120,13 @@ func (p Project) NextVersion() (*semver.Version, error) {
 	if versionsLen >= 0 {
 		latestVersion = versions[versionsLen]
 	} else {
-		latestVersion, err = semver.NewVersion("0.0.0")
+		latestVersionStr := "0.0.0"
+
+		if vPrefix {
+			latestVersionStr = fmt.Sprintf("v%s", latestVersionStr)
+		}
+
+		latestVersion, err = semver.NewVersion(latestVersionStr)
 		if err != nil {
 			return &semver.Version{}, err
 		}
@@ -209,13 +215,13 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 	return increment, nil
 }
 
-func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod) error {
+func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod, vPrefix bool) error {
 	latest, err := p.LatestVersion()
 	if err != nil {
 		return err
 	}
 
-	next, err := p.NextVersion()
+	next, err := p.NextVersion(vPrefix)
 	if err != nil {
 		return err
 	}
