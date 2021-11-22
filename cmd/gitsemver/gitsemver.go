@@ -21,10 +21,11 @@ var bumpCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		project := newProjectOrPanic(cmd)
 		versionFilenamesAndKeys := getVersionFilenamesAndKeysOrFail(cmd)
+		vPrefix := getVPrefixOrFail(cmd)
 		username := getUsernameOrFail(cmd)
 		password := getPasswordOrFail(cmd)
 		latest := getLatestVersionOrFail(project)
-		next := getNextVersionOrFail(project)
+		next := getNextVersionOrFail(project, vPrefix)
 
 		var auth gitsemver.AuthMethod = nil
 
@@ -35,7 +36,7 @@ var bumpCmd = &cobra.Command{
 			}
 		}
 
-		if err := project.Bump(versionFilenamesAndKeys, auth); err != nil {
+		if err := project.Bump(versionFilenamesAndKeys, auth, vPrefix); err != nil {
 			log.Fatalln(err)
 		}
 
@@ -48,9 +49,10 @@ var nextCmd = &cobra.Command{
 	Short: "Outputs the next unreleased version",
 	Run: func(cmd *cobra.Command, args []string) {
 		project := newProjectOrPanic(cmd)
-		next := getNextVersionOrFail(project)
+		vPrefix := getVPrefixOrFail(cmd)
+		next := getNextVersionOrFail(project, vPrefix)
 
-		fmt.Println(next.String())
+		fmt.Println(next.Original())
 	},
 }
 
@@ -61,7 +63,7 @@ var latestCmd = &cobra.Command{
 		project := newProjectOrPanic(cmd)
 		latest := getLatestVersionOrFail(project)
 
-		fmt.Println(latest.String())
+		fmt.Println(latest.Original())
 	},
 }
 
@@ -78,6 +80,9 @@ func init() {
 	bumpCmd.Flags().StringArrayP("version-file", "f", make([]string, 0), "Specify version files to be updated with the new version in the format `filename:key` (i.e. `package.json:\"version\"`)")
 	bumpCmd.Flags().StringP("username", "u", "", "Username to use in HTTP basic authentication")
 	bumpCmd.Flags().StringP("password", "P", "", "Password to use in HTTP basic authentication")
+	bumpCmd.Flags().Bool("v-prefix", false, "Prefix the version with a `v`")
+
+	nextCmd.Flags().Bool("v-prefix", false, "Prefix the version with a `v`")
 }
 
 func newProjectOrPanic(cmd *cobra.Command) *gitsemver.Project {
@@ -108,8 +113,8 @@ func getLatestVersionOrFail(project *gitsemver.Project) *semver.Version {
 	return latest
 }
 
-func getNextVersionOrFail(project *gitsemver.Project) *semver.Version {
-	next, err := project.NextVersion()
+func getNextVersionOrFail(project *gitsemver.Project, vPrefix bool) *semver.Version {
+	next, err := project.NextVersion(vPrefix)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -142,4 +147,13 @@ func getPasswordOrFail(cmd *cobra.Command) string {
 	}
 
 	return password
+}
+
+func getVPrefixOrFail(cmd *cobra.Command) bool {
+	vPrefix, err := cmd.Flags().GetBool("v-prefix")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return vPrefix
 }
