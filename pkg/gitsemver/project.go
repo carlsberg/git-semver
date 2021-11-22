@@ -251,7 +251,7 @@ func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod, vPrefi
 		return err
 	}
 
-	if err := git.PushTagsToOrigin(p.Repo(), auth); err != nil {
+	if err := git.PushToOrigin(p.Repo(), auth); err != nil {
 		return err
 	}
 

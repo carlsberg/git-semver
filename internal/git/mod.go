@@ -128,7 +128,7 @@ func CreateTag(repo *Repository, name, message string) error {
 	return err
 }
 
-func PushTagsToOrigin(repo *Repository, auth AuthMethod) error {
+func PushToOrigin(repo *Repository, auth AuthMethod) error {
 	// skip pushing if remote doesn't exist
 	if _, err := repo.Remote("origin"); err != nil {
 		return nil
@@ -137,7 +137,10 @@ func PushTagsToOrigin(repo *Repository, auth AuthMethod) error {
 	pushOpts := &git.PushOptions{
 		RemoteName: "origin",
 		Progress:   os.Stdout,
-		RefSpecs:   []config.RefSpec{config.RefSpec("refs/tags/*:refs/tags/*")},
+		RefSpecs:   []config.RefSpec{
+			config.RefSpec("refs/heads/*:refs/heads/*"),
+			config.RefSpec("refs/tags/*:refs/tags/*"),
+		},
 		Auth:       auth,
 	}
 
