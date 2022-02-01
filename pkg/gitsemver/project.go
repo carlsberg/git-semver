@@ -23,10 +23,10 @@ const (
 )
 
 var (
-	breaking     = regexp.MustCompile("(?im).*breaking change:.*")
-	breakingBang = regexp.MustCompile(`(?im).*(\w+)(\(.*\))?!:.*`)
-	feature      = regexp.MustCompile(`(?im).*feat(\(.*\))?:.*`)
-	patch        = regexp.MustCompile(`(?im).*fix(\(.*\))?:.*`)
+	breaking     = regexp.MustCompile("(?im)^breaking change:.*")
+	breakingBang = regexp.MustCompile(`(?i)^(\w+)(\(.*\))?!:.*`)
+	feature      = regexp.MustCompile(`(?i)^feat(\(.*\))?:.*`)
+	patch        = regexp.MustCompile(`(?i)^fix(\(.*\))?:.*`)
 )
 
 type Project struct {
