@@ -76,6 +76,30 @@ bump libs/xyz from 0.0.0 to 0.1.0
 # creates a tag `libs/xyz/0.1.0`
 ```
 
+## Usage in GitHub Actions
+
+The following example shows a workflow using git-semver in GitHub Actions:
+
+```yaml
+name: Bump
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: carlsberg/git-semver@v0.5.0
+        with:
+          script: |
+            echo "Latest Version: $(git semver latest)"
+            echo "Next Version: $(git semver next)"
+            
+            git semver bump -u ${{ github.actor }} -P ${{ github.token }}
+```
+
 ## License
 
 This project is released under the [MIT License](LICENSE).
