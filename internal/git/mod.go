@@ -137,11 +137,11 @@ func PushToOrigin(repo *Repository, auth AuthMethod) error {
 	pushOpts := &git.PushOptions{
 		RemoteName: "origin",
 		Progress:   os.Stdout,
-		RefSpecs:   []config.RefSpec{
+		RefSpecs: []config.RefSpec{
 			config.RefSpec("refs/heads/*:refs/heads/*"),
 			config.RefSpec("refs/tags/*:refs/tags/*"),
 		},
-		Auth:       auth,
+		Auth: auth,
 	}
 
 	if err := repo.Push(pushOpts); err != nil {
