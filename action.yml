@@ -1,0 +1,30 @@
+name: Git SemVer
+description: Installs and runs git-semver
+
+inputs:
+  script:
+    description: Shell script to run
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - id: version
+      run: |
+        v="${{ github.action_ref }}"
+        v=$(echo "${v:1}")
+        echo "::set-output name=version::$v"
+      shell: bash
+
+    - run: |
+        v="${{ steps.version.outputs.version }}"
+        url="https://github.com/carlsberg/git-semver/releases/download/v$v/git-semver_$v_Linux_x86_64.tar.gz"
+        curl -L "$url" >> git-semver.tar.gz
+        tar -xvzf git-semver.tar.gz
+      shell: bash
+
+    - run: |
+        echo '${{ inputs.runs }}' >> script.sh
+        chmod +x script.sh
+        ./script.sh
+      shell: bash
