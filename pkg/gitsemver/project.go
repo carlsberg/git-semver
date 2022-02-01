@@ -23,10 +23,10 @@ const (
 )
 
 var (
-	breaking     = regexp.MustCompile("(?im).*breaking change:.*")
-	breakingBang = regexp.MustCompile(`(?im).*(\w+)(\(.*\))?!:.*`)
-	feature      = regexp.MustCompile(`(?im).*feat(\(.*\))?:.*`)
-	patch        = regexp.MustCompile(`(?im).*fix(\(.*\))?:.*`)
+	breaking     = regexp.MustCompile("(?im)^breaking change:.*")
+	breakingBang = regexp.MustCompile(`(?i)^(\w+)(\(.*\))?!:.*`)
+	feature      = regexp.MustCompile(`(?i)^feat(\(.*\))?:.*`)
+	patch        = regexp.MustCompile(`(?i)^fix(\(.*\))?:.*`)
 )
 
 type Project struct {
@@ -190,26 +190,9 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 		}
 	}
 
-	var increment = None
-
-	for _, commit := range commits {
-		commitIncrement := None
-
-		if breaking.MatchString(commit.Message) || breakingBang.MatchString(commit.Message) {
-			commitIncrement = Major
-		}
-
-		if feature.MatchString(commit.Message) {
-			commitIncrement = Minor
-		}
-
-		if patch.MatchString(commit.Message) {
-			commitIncrement = Patch
-		}
-
-		if commitIncrement > increment {
-			increment = commitIncrement
-		}
+	increment, err := resolveIncrement(commits)
+	if err != nil {
+		return None, err
 	}
 
 	return increment, nil
@@ -264,4 +247,30 @@ func TagNameFromProjectAndVersion(p *Project, v *semver.Version) string {
 	}
 
 	return v.Original()
+}
+
+func resolveIncrement(commits []*git.Commit) (Increment, error) {
+	var increment = None
+
+	for _, commit := range commits {
+		commitIncrement := None
+
+		if breaking.MatchString(commit.Message) || breakingBang.MatchString(commit.Message) {
+			commitIncrement = Major
+		}
+
+		if feature.MatchString(commit.Message) {
+			commitIncrement = Minor
+		}
+
+		if patch.MatchString(commit.Message) {
+			commitIncrement = Patch
+		}
+
+		if commitIncrement > increment {
+			increment = commitIncrement
+		}
+	}
+
+	return increment, nil
 }
