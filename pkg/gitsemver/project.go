@@ -234,7 +234,9 @@ func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod, vPrefi
 		if err := git.CreateTag(p.Repo(), tagName, tagMessage); err != nil {
 			return err
 		}
+	}
 
+	if !skipTag || len(versionFilenamesAndKeys) > 0 {
 		if err := git.PushToOrigin(p.Repo(), auth); err != nil {
 			return err
 		}
