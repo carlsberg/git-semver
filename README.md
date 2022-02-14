@@ -28,11 +28,13 @@ Bumps the latest version to the next version, creates a tag and pushes it to `or
 
 **Options:**
 
-| Name                 | Description                                                                |
-| -------------------- | -------------------------------------------------------------------------- |
-| `-P, --password`     | Password to use in HTTP basic authentication (useful for CI/CD pipelines)  |
-| `-u, --username`     | Username to use in HTTP basic authentication (useful for CI/CD pipelines)  |
-| `-f, --version-file` | Version files that should be updated. Format should be `filename:key`      |
+| Name                 | Description                                                               |
+| -------------------- | ------------------------------------------------------------------------- |
+| `-P, --password`     | Password to use in HTTP basic authentication (useful for CI/CD pipelines) |
+| `-u, --username`     | Username to use in HTTP basic authentication (useful for CI/CD pipelines) |
+| `-f, --version-file` | Version files that should be updated. Format should be `filename:key`     |
+| `--v-prefix`         | Prefix the version with a `v`                                             |
+| `--skip-tag`         | Don't create a new tag automatically                                      |
 
 **Example:**
 
@@ -56,6 +58,12 @@ $ git semver latest
 #### `git semver next`
 
 Outputs the next unreleased version.
+
+**Options:**
+
+| Name                 | Description                                                               |
+| -------------------- | ------------------------------------------------------------------------- |
+| `--v-prefix`         | Prefix the version with a `v`                                             |
 
 **Example:**
 

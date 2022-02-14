@@ -22,6 +22,7 @@ var bumpCmd = &cobra.Command{
 		project := newProjectOrPanic(cmd)
 		versionFilenamesAndKeys := getVersionFilenamesAndKeysOrFail(cmd)
 		vPrefix := getVPrefixOrFail(cmd)
+		skipTag := getSkipTagOrFail(cmd)
 		username := getUsernameOrFail(cmd)
 		password := getPasswordOrFail(cmd)
 		latest := getLatestVersionOrFail(project)
@@ -36,7 +37,7 @@ var bumpCmd = &cobra.Command{
 			}
 		}
 
-		if err := project.Bump(versionFilenamesAndKeys, auth, vPrefix); err != nil {
+		if err := project.Bump(versionFilenamesAndKeys, auth, vPrefix, skipTag); err != nil {
 			log.Fatalln(err)
 		}
 
@@ -81,6 +82,7 @@ func init() {
 	bumpCmd.Flags().StringP("username", "u", "", "Username to use in HTTP basic authentication")
 	bumpCmd.Flags().StringP("password", "P", "", "Password to use in HTTP basic authentication")
 	bumpCmd.Flags().Bool("v-prefix", false, "Prefix the version with a `v`")
+	bumpCmd.Flags().Bool("skip-tag", false, "Don't create a new tag automatically")
 
 	nextCmd.Flags().Bool("v-prefix", false, "Prefix the version with a `v`")
 }
@@ -156,4 +158,13 @@ func getVPrefixOrFail(cmd *cobra.Command) bool {
 	}
 
 	return vPrefix
+}
+
+func getSkipTagOrFail(cmd *cobra.Command) bool {
+	skipTag, err := cmd.Flags().GetBool("skip-tag")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return skipTag
 }
