@@ -198,7 +198,7 @@ func (p *Project) NextVersionIncrement() (Increment, error) {
 	return increment, nil
 }
 
-func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod, vPrefix bool) error {
+func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod, vPrefix, skipTag bool) error {
 	latest, err := p.LatestVersion()
 	if err != nil {
 		return err
@@ -227,15 +227,17 @@ func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod, vPrefi
 		}
 	}
 
-	tagName := TagNameFromProjectAndVersion(p, next)
-	tagMessage := fmt.Sprintf("Release %s", tagName)
+	if !skipTag {
+		tagName := TagNameFromProjectAndVersion(p, next)
+		tagMessage := fmt.Sprintf("Release %s", tagName)
 
-	if err := git.CreateTag(p.Repo(), tagName, tagMessage); err != nil {
-		return err
-	}
+		if err := git.CreateTag(p.Repo(), tagName, tagMessage); err != nil {
+			return err
+		}
 
-	if err := git.PushToOrigin(p.Repo(), auth); err != nil {
-		return err
+		if err := git.PushToOrigin(p.Repo(), auth); err != nil {
+			return err
+		}
 	}
 
 	return nil
