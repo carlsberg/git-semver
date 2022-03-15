@@ -26,7 +26,7 @@ runs:
       shell: bash
 
     - run: |
-        echo '${{ inputs.runs }}' >> script.sh
-        chmod +x script.sh
-        ./script.sh
+        echo '${{ inputs.script }}' >> $HOME/.local/bin/script.sh
+        chmod +x $HOME/.local/bin/script.sh
+        $HOME/.local/bin/script.sh
       shell: bash
