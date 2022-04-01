@@ -103,7 +103,7 @@ func FindTags(repo *Repository, reg *regexp.Regexp) ([]string, error) {
 	defer tags.Close()
 
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
-		if len(ref.Name().Short()) < 15 && reg.MatchString(ref.Name().Short()) {
+		if len(ref.Name().Short()) < 16 && reg.MatchString(ref.Name().Short()) {
 			matchTags = append(matchTags, ref.Name().Short())
 		}
 
