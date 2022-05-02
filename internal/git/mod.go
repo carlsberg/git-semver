@@ -14,11 +14,13 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
-type Commit = object.Commit
-type Hash = plumbing.Hash
-type Repository = git.Repository
-type AuthMethod = transport.AuthMethod
-type BasicAuth = http.BasicAuth
+type (
+	Commit     = object.Commit
+	Hash       = plumbing.Hash
+	Repository = git.Repository
+	AuthMethod = transport.AuthMethod
+	BasicAuth  = http.BasicAuth
+)
 
 func OpenRepository(path string) (*Repository, error) {
 	return git.PlainOpen(path)
@@ -103,7 +105,7 @@ func FindTags(repo *Repository, reg *regexp.Regexp) ([]string, error) {
 	defer tags.Close()
 
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
-		if len(ref.Name().Short()) < 16 && reg.MatchString(ref.Name().Short()) {
+		if len(ref.Name().Short()) < 10 && reg.MatchString(ref.Name().Short()) {
 			matchTags = append(matchTags, ref.Name().Short())
 		}
 
