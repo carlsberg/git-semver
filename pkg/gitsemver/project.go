@@ -222,7 +222,7 @@ func (p *Project) Bump(versionFilenamesAndKeys []string, auth AuthMethod, vPrefi
 			}
 		}
 
-		if _, err := git.CreateCommit(p.Repo(), fmt.Sprintf("bump: %s -> %s", latest.String(), next.String())); err != nil {
+		if _, err := git.CreateCommit(p.Repo(), fmt.Sprintf("bump: %s -> %s [skip ci]", latest.String(), next.String())); err != nil {
 			return err
 		}
 	}
